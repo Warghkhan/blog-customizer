@@ -18,7 +18,7 @@ import {
 } from 'src/constants/articleProps';
 import { RadioGroup } from 'src/ui/radio-group';
 import { Separator } from 'src/ui/separator';
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useRef, useEffect } from 'react';
 
 export type ArticleParamsFormProps = {
 	setAppState: (value: ArticleStateType) => void;
@@ -32,6 +32,8 @@ export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
 	const [formState, setFormState] =
 		useState<ArticleStateType>(defaultArticleState);
 
+	const formRef = useRef<HTMLFormElement>(null); // Создаем ref для формы
+
 	const handleChange = (fieldName: string) => {
 		return (value: OptionType) => {
 			setFormState((currentFormState) => ({
@@ -43,17 +45,32 @@ export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
 
 	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-
 		setAppState(formState);
 	};
 
 	const handleReset = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-
 		setFormState(defaultArticleState);
-
 		setAppState(defaultArticleState);
 	};
+
+	const handleClickOutside = (event: MouseEvent) => {
+		if (formRef.current && !formRef.current.contains(event.target as Node)) {
+			setIsOpened(false);
+		}
+	};
+
+	useEffect(() => {
+		if (isOpened) {
+			document.addEventListener('mousedown', handleClickOutside);
+		} else {
+			document.removeEventListener('mousedown', handleClickOutside);
+		}
+
+		return () => {
+			document.removeEventListener('mousedown', handleClickOutside);
+		};
+	}, [isOpened]);
 
 	return (
 		<>
@@ -65,6 +82,7 @@ export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
 				onClick={() => setIsOpened(false)}
 				className={clsx(styles.overlay, isOpened && styles.overlay_open)}></div>
 			<aside
+				ref={formRef}
 				className={clsx(styles.container, isOpened && styles.container_open)}>
 				<form
 					onSubmit={handleSubmit}
@@ -106,7 +124,7 @@ export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
 						onChange={handleChange('contentWidth')}
 					/>
 					<div className={styles.bottomContainer}>
-						<Button title='Сбросить' type='clear' />
+						<Button title='Сбросить' type='clear' htmlType='reset' />
 						<Button title='Применить' type='apply' />
 					</div>
 				</form>
